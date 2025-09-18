@@ -73,7 +73,7 @@ jobs:
           # 添加构建好的压缩包到镜像中
           ADD server/target/kkFileView-*.tar.gz /opt/
           # 设置环境变量
-          ENV KKFILEVIEW_BIN_FOLDER=/opt/kkFileView-$VERSION/bin
+          ENV KKFILEVIEW_BIN_FOLDER=/opt/kkFileView-${{ env.VERSION }}/bin
           # 设置入口点
           ENTRYPOINT ["java","-Dfile.encoding=UTF-8","-Dspring.config.location=/opt/kkFileView-${{ env.VERSION }}/config/application.properties","-jar","/opt/kkFileView-${{ env.VERSION }}/bin/kkFileView-${{ env.VERSION }}.jar"]
           EOF
