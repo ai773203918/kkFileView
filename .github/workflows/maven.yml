@@ -38,20 +38,6 @@ jobs:
         # -Dmaven.test.skip=true：跳过测试（适用于紧急构建或依赖未稳定的场景）
         # --file pom.xml：显式指定pom.xml路径（默认会自动查找）
 
-      # 将打包文件存储为工作流产物（Artifact）
-      # 上传 .zip 文件
-      - name: Upload ZIP Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: kkFileView-zip
-          path: server/target/kkFileView-*.zip
-      # 上传 .tar.gz 文件
-      - name: Upload TAR.GZ Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: kkFileView-tar-gz
-          path: server/target/kkFileView*.tar.gz
-
       # 设置QEMU，用于构建多平台镜像
       - name: 设置 QEMU  # 步骤名称
         uses: docker/setup-qemu-action@v3  # 引用流程
@@ -89,12 +75,28 @@ jobs:
           echo "TAG=918178/kkfileview:${{ env.TAG_NAME }}" >> $GITHUB_ENV
           echo "TAG_LATEST=918178/kkfileview:latest" >> $GITHUB_ENV
 
+      # 创建 Dockerfile,而不是直接使用项目中的Dockerfile
+      - name: 创建动态 Dockerfile
+        run: |
+          cat > ./Dockerfile_zwzw << 'EOF'
+          # 使用你所需的基础镜像
+          FROM keking/kkfileview-jdk
+          # 添加构建好的压缩包到镜像中
+          ADD server/target/kkFileView-*.tar.gz /opt/
+          # 设置环境变量
+          ENV KKFILEVIEW_BIN_FOLDER=/opt/kkFileView-4.4.0/bin
+          # 设置入口点或启动命令
+          # ENTRYPOINT ["/opt/kkFileView-4.4.0/bin/startup.sh"]
+          EOF
+          # 可选：打印出内容以便调试
+          cat ./Dockerfile_zwzw
+
       # 构建并推送镜像
       - name: 编译并推送 kkfileview 镜像  # 步骤名称
         uses: docker/build-push-action@v5  # 引用流程
         with:  # 参数
           context: .  # 构建上下文
-          file: ./Dockerfile  # 指定的Dockerfile
+          file: ./Dockerfile_zwzw  # 指定的Dockerfile
           platforms: linux/amd64  # 构建的平台(测试构建,少一些快一点),多架构一般取决于使用的基础镜像支持架构
           # platforms: linux/amd64,linux/386,linux/arm64,linux/arm/v7  # 构建的平台(正式构建)
           push: true  # 推送到仓库
@@ -108,3 +110,17 @@ jobs:
           tags: |
             ${{ env.TAG }}
             ${{ env.TAG_LATEST }}
+
+      # 将打包文件存储为工作流产物（Artifact）
+      # 上传 .zip 文件
+      - name: Upload ZIP Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kkFileView-zip
+          path: server/target/kkFileView-*.zip
+      # 上传 .tar.gz 文件
+      - name: Upload TAR.GZ Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kkFileView-tar-gz
+          path: server/target/kkFileView*.tar.gz
