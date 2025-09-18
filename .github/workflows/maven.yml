@@ -18,23 +18,16 @@ jobs:
   build:
     # 指定运行环境为Ubuntu 22.04
     runs-on: ubuntu-22.04
-
     steps:
-      # 第一步：检出代码。使用actions/checkout@v2将仓库代码下载到工作目录
-      - uses: actions/checkout@v2
+      # 第一步：检出代码.将仓库代码下载到工作目录
+      - uses: actions/checkout@v4
 
       # 第二步：设置JDK环境。安装指定的JDK版本（Java 8），并启用Maven依赖缓存以加速后续构建
-      # - name: Set up JDK 8
-      #   uses: actions/setup-java@v2
-      #   with:
-      #     java-version: '8'     # 指定JDK版本为8
-      #     distribution: 'adopt' # 使用AdoptOpenJDK发行版
-      #     cache: maven          # 启用Maven依赖缓存，避免重复下载依赖
       - name: Set up JDK 8
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'  # AdoptOpenJDK 已迁移至 Temurin
-          java-version: '8'
+          java-version: '8'  # 指定JDK版本为8
           cache: 'maven'  # Maven依赖
 
       # 第三步：执行Maven构建。跳过测试阶段（-Dmaven.test.skip=true），仅打包项目
@@ -45,16 +38,73 @@ jobs:
         # -Dmaven.test.skip=true：跳过测试（适用于紧急构建或依赖未稳定的场景）
         # --file pom.xml：显式指定pom.xml路径（默认会自动查找）
 
-      # 将打包文件存储为工作流产物（Artifact）​          
-      # # 上传 .zip 文件
-      # - name: Upload ZIP Artifact
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: kkFileView-zip
-      #     path: server/target/kkFileView-*.zip
+      # 将打包文件存储为工作流产物（Artifact）
+      # 上传 .zip 文件
+      - name: Upload ZIP Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kkFileView-zip
+          path: server/target/kkFileView-*.zip
       # 上传 .tar.gz 文件
       - name: Upload TAR.GZ Artifact
         uses: actions/upload-artifact@v4
         with:
           name: kkFileView-tar-gz
           path: server/target/kkFileView*.tar.gz
+
+      # 设置QEMU，用于构建多平台镜像
+      - name: 设置 QEMU  # 步骤名称
+        uses: docker/setup-qemu-action@v3  # 引用流程
+
+      # 设置Docker Buildx，用于构建和推送多平台镜像
+      - name: 设置 Docker Buildx  # 步骤名称
+        uses: docker/setup-buildx-action@v3  # 引用流程
+
+      # 获取镜像标签名称
+      - name: 获取 Image Tag  # 步骤名称
+        # 注意 | 后注释会有问题故放在这
+        # 如果没有提供标签，则使用GitHub Ref作为标签
+        # 如果提供了标签，则使用提供的标签
+        run: |
+          if [ x${{ github.event.inputs.tag }} == x"" ]; then
+            echo "TAG_NAME=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+          else
+            echo "TAG_NAME=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
+          fi
+
+      # 登录到Docker Hub
+      - name: 登录 DockerHub  # 步骤名称
+        uses: docker/login-action@v3  # 引用流程
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}  # Docker Hub用户名(需在secrets中配置)
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}  # Docker Hub密码(需在secrets中配置)
+
+      # 准备镜像标签
+      - name: 设置 Image Tags  # 步骤名称
+        # 注意 | 后注释会有问题故放在这
+        # 设置引用的Dockerfile路径
+        # 设置构建的镜像标签:版本号+latest(注意tag全小写)
+        run: |
+          echo "DOCKERFILE_PATH=Dockerfile" >> $GITHUB_ENV
+          echo "TAG=918178/kkfileview:${{ env.TAG_NAME }}" >> $GITHUB_ENV
+          echo "TAG_LATEST=918178/kkfileview:latest" >> $GITHUB_ENV
+
+      # 构建并推送镜像
+      - name: 编译并推送 kkfileview 镜像  # 步骤名称
+        uses: docker/build-push-action@v5  # 引用流程
+        with:  # 参数
+          context: .  # 构建上下文
+          file: ./Dockerfile  # 指定的Dockerfile
+          platforms: linux/amd64  # 构建的平台(测试构建,少一些快一点),多架构一般取决于使用的基础镜像支持架构
+          # platforms: linux/amd64,linux/386,linux/arm64,linux/arm/v7  # 构建的平台(正式构建)
+          push: true  # 推送到仓库
+          # load: true  # 加载到本地(多构建平台不支持;若其它也需调用镜像则必须加载,如打包导出)
+          # 注意 | 后注释会有问题故放在这
+          # 传递构建参数(覆盖 ARG kkfileview_VERSION=3.5.0 配置参数)
+          # build-args: |
+          #   kkfileview_VERSION=${{ env.TAG_NAME }}
+          # 注意 | 后注释会有问题故放在这
+          # 推送的镜像标签(版本标签+latest)
+          tags: |
+            ${{ env.TAG }}
+            ${{ env.TAG_LATEST }}
