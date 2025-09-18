@@ -10,9 +10,9 @@ on:
   workflow_dispatch:  # 添加手动触发选项
     inputs:  # 可选：定义手动触发时的输入参数
       tag:
-        description: '构建的版本号'
+        description: '构建的版本号,按照实际版本号填写(不带v,如:4.4.0)'
         required: true  # 必填项
-        default: 'test'
+        default: '4.4.0'
 
 jobs:
   build:
@@ -80,7 +80,7 @@ jobs:
         run: |
           cat > ./Dockerfile_zwzw << 'EOF'
           # 使用你所需的基础镜像
-          FROM keking/kkfileview-jdk:${{ github.event.inputs.tag }}
+          FROM keking/kkfileview-jdk
           # 添加构建好的压缩包到镜像中
           ADD server/target/kkFileView-*.tar.gz /opt/
           # 设置环境变量
