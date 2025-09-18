@@ -75,7 +75,7 @@ jobs:
           # 设置环境变量
           ENV KKFILEVIEW_BIN_FOLDER=/opt/kkFileView-$VERSION/bin
           # 设置入口点
-          ENTRYPOINT ["java","-Dfile.encoding=UTF-8","-Dspring.config.location=/opt/kkFileView-$VERSION/config/application.properties","-jar","/opt/kkFileView-$VERSION/bin/kkFileView-$VERSION.jar"]
+          ENTRYPOINT ["java","-Dfile.encoding=UTF-8","-Dspring.config.location=/opt/kkFileView-${{ env.VERSION }}/config/application.properties","-jar","/opt/kkFileView-${{ env.VERSION }}/bin/kkFileView-${{ env.VERSION }}.jar"]
           EOF
           # 打印Dockerfile内容以便调试
           cat ./Dockerfile_custom
