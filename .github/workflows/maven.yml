@@ -24,13 +24,18 @@ jobs:
       - uses: actions/checkout@v2
 
       # 第二步：设置JDK环境。安装指定的JDK版本（Java 8），并启用Maven依赖缓存以加速后续构建
+      # - name: Set up JDK 8
+      #   uses: actions/setup-java@v2
+      #   with:
+      #     java-version: '8'     # 指定JDK版本为8
+      #     distribution: 'adopt' # 使用AdoptOpenJDK发行版
+      #     cache: maven          # 启用Maven依赖缓存，避免重复下载依赖
       - name: Set up JDK 8
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v4
         with:
-          java-version: '8'     # 指定JDK版本为8
-          distribution: 'adopt' # 使用AdoptOpenJDK发行版
-          cache: 'none'  # 禁用缓存
-          #cache: maven          # 启用Maven依赖缓存，避免重复下载依赖
+          distribution: 'temurin'  # AdoptOpenJDK 已迁移至 Temurin
+          java-version: '8'
+          cache: 'maven'  # Maven依赖
 
       # 第三步：执行Maven构建。跳过测试阶段（-Dmaven.test.skip=true），仅打包项目
       - name: Build with Maven
