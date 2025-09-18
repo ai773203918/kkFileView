@@ -46,17 +46,15 @@ jobs:
         # --file pom.xml：显式指定pom.xml路径（默认会自动查找）
 
       # 将打包文件存储为工作流产物（Artifact）​          
-      # 上传 .zip 文件
-      - name: Upload ZIP Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: kkFileView-zip
-          path: /home/runner/work/kkFileView/kkFileView/server/target/kkFileView-*.zip
-          retention-days: 7  # 可选：设置保留天数（默认90天）
+      # # 上传 .zip 文件
+      # - name: Upload ZIP Artifact
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: kkFileView-zip
+      #     path: server/target/kkFileView-*.zip
       # 上传 .tar.gz 文件
       - name: Upload TAR.GZ Artifact
         uses: actions/upload-artifact@v4
         with:
           name: kkFileView-tar-gz
-          path: /home/runner/work/kkFileView/kkFileView/server/target/kkFileView*.tar.gz
-          retention-days: 7
+          path: kkFileView/server/target/kkFileView*.tar.gz
