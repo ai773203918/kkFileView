@@ -3,16 +3,16 @@ name: Java CI with Maven
 
 # 触发条件：当代码推送到master分支或针对master分支发起pull_request时触发
 on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+  # push:  # 当代码推送到仓库时触发
+  #   branches: [ master ]
+  # pull_request:  # 当针对仓库发起pull_request时触发
+  #   branches: [ master ]
   workflow_dispatch:  # 添加手动触发选项
     inputs:  # 可选：定义手动触发时的输入参数
-      environment:
-        description: '手动触发'
-        required: false
-        default: 'dev'
+      tag:
+        description: '构建的版本号'
+        required: true  # 必填项
+        default: 'test'
 
 jobs:
   build:
@@ -80,13 +80,13 @@ jobs:
         run: |
           cat > ./Dockerfile_zwzw << 'EOF'
           # 使用你所需的基础镜像
-          FROM keking/kkfileview-jdk
+          FROM keking/kkfileview-jdk:${{ github.event.inputs.tag }}
           # 添加构建好的压缩包到镜像中
           ADD server/target/kkFileView-*.tar.gz /opt/
           # 设置环境变量
-          ENV KKFILEVIEW_BIN_FOLDER=/opt/kkFileView-4.4.0/bin
+          ENV KKFILEVIEW_BIN_FOLDER=/opt/kkFileView-${{ github.event.inputs.tag }}/bin
           # 设置入口点或启动命令
-          # ENTRYPOINT ["/opt/kkFileView-4.4.0/bin/startup.sh"]
+          ENTRYPOINT ["java","-Dfile.encoding=UTF-8","-Dspring.config.location=/opt/kkFileView-${{ github.event.inputs.tag }}/config/application.properties","-jar","/opt/kkFileView-${{ github.event.inputs.tag }}/bin/kkFileView-${{ github.event.inputs.tag }}.jar"]
           EOF
           # 可选：打印出内容以便调试
           cat ./Dockerfile_zwzw
